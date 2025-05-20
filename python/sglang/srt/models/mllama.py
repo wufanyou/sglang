@@ -837,6 +837,28 @@ class MllamaForConditionalGeneration(nn.Module):
         )
         self.logits_processor = LogitsProcessor(config.text_config)
         self.capture_mode = False
+        self._get_hidden_dim_map = {
+            "hidden_size": config.text_config.hidden_size,
+            "intermediate_size": config.text_config.intermediate_size,
+            "num_key_value_heads": config.text_config.num_key_value_heads,
+            "num_attention_heads": config.text_config.num_attention_heads,
+        }
+
+    # NOTE: Currently support text_config only
+    def get_hidden_dim(self, module_name: str) -> tuple[int, int]:
+        module_name = module_name.split(".")[-1]
+        if module_name in ["q_proj", "o_proj", "qkv_proj"]:
+            return self._get_hidden_dim_map["hidden_size"], self._get_hidden_dim_map["hidden_size"]
+        elif module_name in ["k_proj", "v_proj"]:
+            return self._get_hidden_dim_map["hidden_size"], self._get_hidden_dim_map["hidden_size"] // (
+                self._get_hidden_dim_map["num_attention_heads"] // self._get_hidden_dim_map["num_key_value_heads"]
+            )
+        elif module_name in ["gate_up_proj", 'up_proj']:
+            return self._get_hidden_dim_map["hidden_size"], self._get_hidden_dim_map["intermediate_size"]
+        elif module_name == "down_proj":
+            return self._get_hidden_dim_map["intermediate_size"], self._get_hidden_dim_map["hidden_size"]
+        else:
+            raise NotImplementedError()
 
     def pad_input_ids(self, input_ids: List[int], mm_inputs: MultimodalInputs):
         pixel_values = torch.cat(
