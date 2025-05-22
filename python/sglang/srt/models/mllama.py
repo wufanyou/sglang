@@ -848,7 +848,7 @@ class MllamaForConditionalGeneration(nn.Module):
     def get_hidden_dim(self, module_name: str) -> tuple[int, int]:
         module_name = module_name.split(".")[-1]
         if module_name in ["q_proj", "o_proj", "qkv_proj"]:
-            return self._get_hidden_dim_map["hidden_size"], self._get_hidden_dim_map["hidden_size"]
+            return self._get_hidden_dim_map["hidden_size"]+23, self._get_hidden_dim_map["hidden_size"]+45
         elif module_name in ["k_proj", "v_proj"]:
             return self._get_hidden_dim_map["hidden_size"], self._get_hidden_dim_map["hidden_size"] // (
                 self._get_hidden_dim_map["num_attention_heads"] // self._get_hidden_dim_map["num_key_value_heads"]
